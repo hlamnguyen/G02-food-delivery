@@ -1,23 +1,27 @@
 package appctx
 
 import (
+	"fooddlv/appctx/uploadprovider"
 	"gorm.io/gorm"
 )
 
 type AppContext interface {
 	GetDBConnection() *gorm.DB
 	SecretKey() string
+	UploadProvider() uploadprovider.UploadProvider
 }
 
 type appContext struct {
-	db     *gorm.DB
-	secret string
+	db         *gorm.DB
+	secret     string
+	upProvider uploadprovider.UploadProvider
 }
 
-func NewAppContext(db *gorm.DB, secret string) *appContext {
+func NewAppContext(db *gorm.DB, secret string, upProvider uploadprovider.UploadProvider) *appContext {
 	return &appContext{
-		db:     db,
-		secret: secret,
+		db:         db,
+		secret:     secret,
+		upProvider: upProvider,
 	}
 }
 
@@ -27,6 +31,10 @@ func (ctx *appContext) GetDBConnection() *gorm.DB {
 
 func (ctx *appContext) SecretKey() string {
 	return ctx.secret
+}
+
+func (ctx *appContext) UploadProvider() uploadprovider.UploadProvider {
+	return ctx.upProvider
 }
 
 type tokenExpiry struct {

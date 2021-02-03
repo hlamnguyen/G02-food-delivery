@@ -18,7 +18,7 @@ func Login(appCtx appctx.AppContext) func(*gin.Context) {
 		var loginUserData usermodel.UserLogin
 
 		if err := c.ShouldBind(&loginUserData); err != nil {
-			panic(err)
+			panic(common.ErrInvalidRequest(err))
 		}
 
 		db := appCtx.GetDBConnection()
