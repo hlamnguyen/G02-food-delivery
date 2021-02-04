@@ -1,33 +1,32 @@
 package uploadbusiness
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"fooddlv/appctx/uploadprovider"
 	"fooddlv/common"
 	"fooddlv/module/upload/uploadmodel"
 	"image"
 	"io"
 	"log"
-	"mime/multipart"
 	"path/filepath"
 	"strings"
 	"time"
 )
 
-type UploadProvider interface {
-	SaveFileUploaded(ctx context.Context, file multipart.File, dst string) (*common.Image, error)
-}
-
 type uploadBiz struct {
-	provider UploadProvider
+	provider uploadprovider.UploadProvider
 }
 
-func NewUploadBiz(provider UploadProvider) *uploadBiz {
+func NewUploadBiz(provider uploadprovider.UploadProvider) *uploadBiz {
 	return &uploadBiz{provider: provider}
 }
 
-func (biz *uploadBiz) Upload(ctx context.Context, file multipart.File, folder, fileName string) (*common.Image, error) {
-	w, h, err := getImageDimension(file)
+func (biz *uploadBiz) Upload(ctx context.Context, data []byte, folder, fileName string) (*common.Image, error) {
+	fileBytes := bytes.NewBuffer(data)
+
+	w, h, err := getImageDimension(fileBytes)
 
 	if err != nil {
 		return nil, uploadmodel.ErrFileIsNotImage(err)
@@ -40,7 +39,7 @@ func (biz *uploadBiz) Upload(ctx context.Context, file multipart.File, folder, f
 	fileExt := filepath.Ext(fileName)
 	fileName = fmt.Sprintf("%d%s", time.Now().Nanosecond(), fileExt)
 
-	img, err := biz.provider.SaveFileUploaded(ctx, file, fmt.Sprintf("%s/%s", folder, fileName))
+	img, err := biz.provider.SaveFileUploaded(ctx, data, fmt.Sprintf("%s/%s", folder, fileName))
 
 	if err != nil {
 		return nil, uploadmodel.ErrCannotSaveFile(err)

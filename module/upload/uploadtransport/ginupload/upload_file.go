@@ -25,10 +25,15 @@ func Upload(appCtx appctx.AppContext) func(*gin.Context) {
 			panic(common.ErrInvalidRequest(err))
 		}
 
-		defer file.Close()
+		dataBytes := make([]byte, fileHeader.Size)
+		if _, err := file.Read(dataBytes); err != nil {
+			panic(common.ErrInvalidRequest(err))
+		}
+
+		_ = file.Close() // we can close here
 
 		biz := uploadbusiness.NewUploadBiz(appCtx.UploadProvider())
-		img, err := biz.Upload(c.Request.Context(), file, folder, fileHeader.Filename)
+		img, err := biz.Upload(c.Request.Context(), dataBytes, folder, fileHeader.Filename)
 
 		if err != nil {
 			panic(err)
