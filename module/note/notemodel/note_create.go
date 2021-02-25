@@ -9,6 +9,7 @@ type NoteCreate struct {
 	Content               string         `json:"content" gorm:"column:content;"`
 	Cover                 *common.Image  `json:"cover" gorm:"column:cover;"`
 	Photos                *common.Images `json:"photos" gorm:"column:photos;"`
+	CoverImgId            int            `json:"cover_img_id" gorm:"-"`
 }
 
 func (NoteCreate) TableName() string {

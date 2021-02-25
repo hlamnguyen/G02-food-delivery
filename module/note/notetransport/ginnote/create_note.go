@@ -6,6 +6,7 @@ import (
 	"fooddlv/module/note/notebusiness"
 	"fooddlv/module/note/notemodel"
 	"fooddlv/module/note/notestorage"
+	"fooddlv/module/upload/uploadstorage"
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,8 +21,9 @@ func CreateNote(appCtx appctx.AppContext) func(c *gin.Context) {
 		db := appCtx.GetDBConnection()
 		store := notestorage.NewSQLStore(db)
 		requester := c.MustGet(common.CurrentUser).(common.Requester)
-		bizNote := notebusiness.NewCreateNoteBiz(store, requester)
+		imgStore := uploadstorage.NewSQLStore(db)
 
+		bizNote := notebusiness.NewCreateNoteBiz(store, imgStore, requester)
 		data.UserId = requester.GetUserId()
 
 		err := bizNote.CreateNewNote(c.Request.Context(), &data)

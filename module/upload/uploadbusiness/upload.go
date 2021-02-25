@@ -15,12 +15,17 @@ import (
 	"time"
 )
 
-type uploadBiz struct {
-	provider uploadprovider.UploadProvider
+type CreateImageStorage interface {
+	CreateImage(context context.Context, data *common.Image) error
 }
 
-func NewUploadBiz(provider uploadprovider.UploadProvider) *uploadBiz {
-	return &uploadBiz{provider: provider}
+type uploadBiz struct {
+	provider uploadprovider.UploadProvider
+	imgStore CreateImageStorage
+}
+
+func NewUploadBiz(provider uploadprovider.UploadProvider, imgStore CreateImageStorage) *uploadBiz {
+	return &uploadBiz{provider: provider, imgStore: imgStore}
 }
 
 func (biz *uploadBiz) Upload(ctx context.Context, data []byte, folder, fileName string) (*common.Image, error) {
@@ -49,6 +54,11 @@ func (biz *uploadBiz) Upload(ctx context.Context, data []byte, folder, fileName 
 	img.Height = h
 	img.CloudName = "s3" // should be set in provider
 	img.Extension = fileExt
+
+	if err := biz.imgStore.CreateImage(ctx, img); err != nil {
+		// delete img on S3
+		return nil, uploadmodel.ErrCannotSaveFile(err)
+	}
 
 	return img, nil
 }
