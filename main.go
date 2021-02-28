@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"fooddlv/appctx"
 	"fooddlv/appctx/uploadprovider"
+	"fooddlv/consumer"
+	"fooddlv/pubsub/pblocal"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -29,7 +32,12 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	appCtx := appctx.NewAppContext(db, secret, s3Provider)
+	ps := pblocal.NewPubSub()
+
+	appCtx := appctx.NewAppContext(db, secret, s3Provider, ps)
+
+	// setup all consumer / subscriber
+	consumer.RunDeleteImageRecordAfterCreateNote(appCtx, context.Background())
 
 	r := gin.Default()
 

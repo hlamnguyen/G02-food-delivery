@@ -23,7 +23,7 @@ func CreateNote(appCtx appctx.AppContext) func(c *gin.Context) {
 		requester := c.MustGet(common.CurrentUser).(common.Requester)
 		imgStore := uploadstorage.NewSQLStore(db)
 
-		bizNote := notebusiness.NewCreateNoteBiz(store, imgStore, requester)
+		bizNote := notebusiness.NewCreateNoteBiz(store, imgStore, appCtx.GetPubsub(), requester)
 		data.UserId = requester.GetUserId()
 
 		err := bizNote.CreateNewNote(c.Request.Context(), &data)

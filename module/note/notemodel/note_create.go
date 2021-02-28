@@ -19,3 +19,7 @@ func (NoteCreate) TableName() string {
 func (n *NoteCreate) Mask(isAdmin bool) {
 	n.GenUID(common.DBTypeNote, 1)
 }
+
+func (n *NoteCreate) GetImageIds() []int {
+	return []int{n.CoverImgId}
+}
