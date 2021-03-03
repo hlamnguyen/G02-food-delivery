@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"fooddlv/appctx"
 	"fooddlv/appctx/uploadprovider"
@@ -36,8 +35,10 @@ func main() {
 
 	appCtx := appctx.NewAppContext(db, secret, s3Provider, ps)
 
-	// setup all consumer / subscriber
-	consumer.RunDeleteImageRecordAfterCreateNote(appCtx, context.Background())
+	consumerEngine := consumer.NewEngine(appCtx)
+	consumerEngine.Start()
+
+	//consumer.Setup(appCtx, context.Background())
 
 	r := gin.Default()
 

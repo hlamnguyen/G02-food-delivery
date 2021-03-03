@@ -5,6 +5,7 @@ import (
 	"fooddlv/appctx"
 	"fooddlv/common"
 	"fooddlv/module/upload/uploadstorage"
+	"fooddlv/pubsub"
 )
 
 type HasImageIds interface {
@@ -22,4 +23,17 @@ func RunDeleteImageRecordAfterCreateNote(appCtx appctx.AppContext, ctx context.C
 			}
 		}
 	}()
+}
+
+func DeleteImageRecordAfterCreateNote(appCtx appctx.AppContext) consumerJob {
+	return consumerJob{
+		Title: "Delete images records after create note",
+		Hld: func(ctx context.Context, message *pubsub.Message) error {
+			if data, ok := message.Data().(HasImageIds); ok {
+				return uploadstorage.NewSQLStore(appCtx.GetDBConnection()).DeleteImages(ctx, data.GetImageIds())
+			}
+
+			return nil
+		},
+	}
 }
