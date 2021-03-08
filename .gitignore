@@ -16,6 +16,8 @@ app
 # Env file
 .env
 
+deploy/*
+
 # IDEs
 .DS_STORE
 .idea

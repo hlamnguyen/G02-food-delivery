@@ -10,6 +10,7 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"log"
+	"net/http"
 	"os"
 )
 
@@ -41,6 +42,14 @@ func main() {
 	//consumer.Setup(appCtx, context.Background())
 
 	r := gin.Default()
+
+	r.GET("/.well-known/acme-challenge/", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"msg": "pong"})
+	})
+
+	r.GET("/ping", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"msg": "pong"})
+	})
 
 	setupRouter(r, appCtx)
 
