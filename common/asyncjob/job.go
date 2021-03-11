@@ -67,18 +67,49 @@ func NewJob(handler JobHandler) *job {
 }
 
 func (j *job) Execute(ctx context.Context) error {
-	j.state = StateRunning
-	var err error
+	ch := make(chan error)
 
-	err = j.handler(ctx)
+	ctxJob, doneFunc := context.WithCancel(ctx)
 
-	if err != nil {
-		j.state = StateFailed
+	go func() {
+		j.state = StateRunning
+		var err error
+
+		err = j.handler(ctxJob)
+
+		if err != nil {
+			j.state = StateFailed
+			ch <- err
+			return
+		}
+
+		j.state = StateCompleted
+		ch <- err
+	}()
+
+	//for {
+	//	select {
+	//	case <-j.stopChan:
+	//		break
+	//	default:
+	//		fmt.Println("Hello world")
+	//	}
+	//}
+
+	//go func() {
+	//	for {}
+	//}()
+
+	select {
+	case err := <-ch:
+		doneFunc()
 		return err
+	case <-j.stopChan:
+		doneFunc()
+		return nil
 	}
 
-	j.state = StateCompleted
-	return nil
+	//return <-ch
 }
 
 func (j *job) Retry(ctx context.Context) error {
@@ -112,3 +143,21 @@ func (j *job) SetRetryDurations(times []time.Duration) {
 
 	j.config.Retries = times
 }
+
+type Node struct {
+	Next *Node
+	Prev *Node
+}
+
+// Leak
+// nodeA = new(Node) nodeA ---> [Ox123456]
+// nodeB = new(Node) nodeB ---> [Ox123457]
+// nodeB.Next = nodeA nodeA ---> [Ox123456] <--- nodeB.Next
+// nodeA.Next = nodeB nodeB ---> [Ox123457] <--- nodeA.Next
+// nodeB = new(Node) nodeB -x-> [Ox123457] ---> [Ox123456]
+// Set nodeA and nodeB to nil, still leak memory
+// [Ox123457] <---> [Ox123456]
+
+// OK
+// nodeA = new(Node) nodeA ---> [Ox123456]
+// nodeA = nil nodeA -x-> [Ox123456] // release memory

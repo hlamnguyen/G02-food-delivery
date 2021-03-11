@@ -7,14 +7,25 @@ import (
 	"fooddlv/consumer"
 	"fooddlv/pubsub/pblocal"
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
+	jg "go.opencensus.io/exporter/jaeger"
+	"go.opencensus.io/plugin/ochttp"
+	"go.opencensus.io/trace"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"log"
 	"net/http"
 	"os"
 )
 
 func main() {
+	log.SetFormatter(&log.JSONFormatter{})
+
+	log.Println("hello")
+	log.WithFields(log.Fields{
+		"animal": "walrus",
+		"size":   10,
+	}).Info("A group of walrus emerges from the ocean")
+
 	dsn := os.Getenv("DB_CONNECTION_STRING")
 	secret := os.Getenv("SECRET_KEY")
 
@@ -53,5 +64,22 @@ func main() {
 
 	setupRouter(r, appCtx)
 
-	r.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
+	je, err := jg.NewExporter(jg.Options{
+		AgentEndpoint: "localhost:6831",
+		Process:       jg.Process{ServiceName: "Food-Delivery"},
+	})
+
+	trace.RegisterExporter(je)
+	trace.ApplyConfig(trace.Config{DefaultSampler: trace.ProbabilitySampler(1)})
+
+	http.ListenAndServe(
+		":8080",
+		&ochttp.Handler{
+			Handler: r,
+		},
+	)
+
+	//r.Run()
+
+	//r.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
 }

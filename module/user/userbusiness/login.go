@@ -6,6 +6,7 @@ import (
 	"fooddlv/appctx/tokenprovider"
 	"fooddlv/common"
 	"fooddlv/module/user/usermodel"
+	"go.opencensus.io/trace"
 )
 
 type LoginStorage interface {
@@ -36,7 +37,12 @@ func NewLoginBusiness(storeUser LoginStorage, tokenProvider tokenprovider.Provid
 }
 
 func (business *loginBusiness) Login(ctx context.Context, data *usermodel.UserLogin) (*usermodel.Account, error) {
-	user, err := business.storeUser.FindUser(ctx, map[string]interface{}{"email": data.Email})
+	ctx2, span1 := trace.StartSpan(ctx, "user.biz.login")
+	span1.AddAttributes(
+		trace.StringAttribute("email", data.Email),
+	)
+	user, err := business.storeUser.FindUser(ctx2, map[string]interface{}{"email": data.Email})
+	span1.End()
 
 	if err != nil {
 		return nil, common.ErrCannotGetEntity(usermodel.EntityName, err)
@@ -53,15 +59,22 @@ func (business *loginBusiness) Login(ctx context.Context, data *usermodel.UserLo
 		Role:   user.Role,
 	}
 
+	_, span2 := trace.StartSpan(ctx, "user.biz.gen_access_token")
+	//defer span2.End() // Do not do this
 	accessToken, err := business.tokenProvider.Generate(payload, business.tkCfg.GetAtExp())
 	if err != nil {
+		span2.End()
 		return nil, common.ErrInternal(err)
 	}
+	span2.End()
 
+	_, span3 := trace.StartSpan(ctx, "user.biz.gen_refresh_token")
 	refreshToken, err := business.tokenProvider.Generate(payload, business.tkCfg.GetRtExp())
 	if err != nil {
+		span3.End()
 		return nil, common.ErrInternal(err)
 	}
+	span3.End()
 
 	account := usermodel.NewAccount(accessToken, refreshToken)
 
