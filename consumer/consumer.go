@@ -6,6 +6,7 @@ import (
 	"fooddlv/common"
 	"fooddlv/common/asyncjob"
 	"fooddlv/pubsub"
+	"fooddlv/skio"
 	"log"
 )
 
@@ -15,11 +16,12 @@ type consumerJob struct {
 }
 
 type consumerEngine struct {
-	appCtx appctx.AppContext
+	appCtx         appctx.AppContext
+	realtimeEngine skio.RealtimeEngine
 }
 
-func NewEngine(appContext appctx.AppContext) *consumerEngine {
-	return &consumerEngine{appCtx: appContext}
+func NewEngine(appContext appctx.AppContext, realtimeEngine skio.RealtimeEngine) *consumerEngine {
+	return &consumerEngine{appCtx: appContext, realtimeEngine: realtimeEngine}
 }
 
 func (engine *consumerEngine) Start() error {
@@ -35,6 +37,7 @@ func (engine *consumerEngine) Start() error {
 		true,
 		SendNotificationAfterCreateNote(engine.appCtx),
 		DeleteImageRecordAfterCreateNote(engine.appCtx),
+		EmitRealtimeAfterCreateNote(engine.appCtx, engine.realtimeEngine),
 	)
 	// Many sub on a topic
 
@@ -88,8 +91,9 @@ func (engine *consumerEngine) startSubTopic(topic pubsub.Channel, isParallel boo
 	return nil
 }
 
-func Setup(appCtx appctx.AppContext, ctx context.Context) {
-	// setup all consumer / subscriber
-	RunDeleteImageRecordAfterCreateNote(appCtx, context.Background())
-	RunPushNotificationAfterCreateNote(appCtx, context.Background())
-}
+//
+//func Setup(appCtx appctx.AppContext, ctx context.Context) {
+//	// setup all consumer / subscriber
+//	RunDeleteImageRecordAfterCreateNote(appCtx, context.Background())
+//	RunPushNotificationAfterCreateNote(appCtx, context.Background())
+//}
